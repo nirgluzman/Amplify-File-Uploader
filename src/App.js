@@ -1,7 +1,14 @@
 import { useState, useEffect } from "react";
 
 import { Storage } from "@aws-amplify/storage";
-import { FileUploader, Collection } from "@aws-amplify/ui-react";
+import {
+  FileUploader,
+  Collection,
+  withAuthenticator,
+  useAuthenticator,
+  Button,
+} from "@aws-amplify/ui-react";
+
 import "@aws-amplify/ui-react/styles.css";
 
 import { ImageCard } from "./components/ImageCard";
@@ -9,16 +16,17 @@ import { ImageCard } from "./components/ImageCard";
 function App() {
   const [imageKeys, setImageKeys] = useState([]);
   const [images, setImages] = useState([]);
+  const { signOut } = useAuthenticator((context) => [context.signOut]);
 
   const fetchImages = async () => {
     const { results } = await Storage.list(
       "", //  for listing ALL files without prefix
-      { level: "public" }
+      { level: "private" }
     );
     setImageKeys(results);
     const s3Images = await Promise.all(
       results.map(
-        async (image) => await Storage.get(image.key, { level: "public" })
+        async (image) => await Storage.get(image.key, { level: "private" })
       )
     );
     setImages(s3Images);
@@ -36,7 +44,7 @@ function App() {
   return (
     <>
       <FileUploader
-        accessLevel="public"
+        accessLevel="private"
         acceptedFileTypes={["image/*"]}
         variation="drop"
         onSuccess={onSuccess}
@@ -67,8 +75,9 @@ function App() {
           </div>
         )}
       </Collection>
+      <Button onClick={signOut}>Sign Out</Button>
     </>
   );
 }
 
-export default App;
+export default withAuthenticator(App);
